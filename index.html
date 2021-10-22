@@ -1,0 +1,252 @@
+<html>
+<head>
+	<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACJ0lEQVQ4jXWTTUsyURSAz6K9G/9FuAzEWrnwJyThtqVh9BPcZdEqMJhVG4k0wxYuinChqFNCSASKZRSS0WL8aEhlZnzeRczNibcLBy7n3POce75kPp/zW2zbZj6f455F3W8R9+I+dO+2bTOZTJhMJkrnOI4HDHwDXGeA8XhMo9GgXq+jaRqlUombmxseHh6wLMsTRAFcRb/f5/b2ltlsxmw2o1KpqIePj4+cnJwwnU69P3AcB4D393c0TcM0TRqNBrFYjFAoRCqV4uXlBYD19XU2NzdVOgBiWRYAyWSS4+NjPj4+WFlZQURYWlpCRDg9PcUwDNLpNCKCruuqTuJG39nZUakcHBwgIogIwWDQU6O1tTU2NjYAsCzrG3B3d0c+n1d56bqOpmns7++jaRoAX19fAFxeXrK7u6uAAtDtdslmswAMh0NqtZqCPT09cX9/D8BoNKJUKlGtVvn8/PwBGIZBLpcjGo0Sj8cZjUaeqJlMhkQiwdbWFuVymaurK2zb/mmj4zgUi0X8fj8iwtnZGaZp8vr6SqvVIhAIICL4fD4KhQL1el11QlxSu91mdXUVESEQCHB+fk6xWCSRSKiCLi8vs7e3h2maqrCeQWq1WkQiEba3t3l+fqbZbNJsNgmHw0QiEfL5PL1ez9MVWZxzgLe3N46Ojri4uEDXda6vrzk8PKRSqTAYDDzOHsCiwbZt+v0+3W6XTqeDYRjK/ucyued/G/eXM8A//Q1w2KQHnMUAAAAASUVORK5CYII=">
+	<title>Balletje trappen</title>
+</head>
+<body>
+
+<style>
+	html {
+		width: 100%;
+		height: 100%;
+	}
+
+	body {
+		margin: 0;
+	}
+
+	.notice {
+		position: absolute;
+		padding: 10px;
+		font-family: "Arial";
+		font-weight: bold;
+		color: #fff;
+	}
+
+	canvas#game {
+		background-image: url("https://server.teunstrik.com/fussballfeld_03_c.jpg"); /* football field */
+		background-repeat: no-repeat;
+		background-size: 100% 100%;
+		user-select: none;
+		width: 100%;
+		height: 100%;
+		cursor: pointer;
+	}
+
+	.shooting-pointer {
+	    background-color: red;
+	    width: 100px;
+	    height: 25px;
+	    position: absolute;
+	    left: 200px;
+	    top: 800px;
+	    writing-mode: vertical-lr;
+	    font-weight: bold;
+	    color: #fff;
+	    font-family: "Arial";
+	}
+
+	.shooting-pointer::before {
+		content: "";
+		position: relative;
+		display: block;
+		width: 25px;
+		height: 25px;
+		top: 50%;
+		margin-right: 100%;
+		transform: translate(-50%, -50%) rotate(135deg);
+		background-color: inherit;
+	}
+</style>
+
+<center>
+	<div class="notice">You can only shoot from left to right and vice versa atm (so corner kicks aren't possible yet)</div>
+	<div class="shooting-pointer"></div>
+	<canvas id="game" width="1500" height="850">
+</center>
+
+<script type="text/javascript">
+	// override console.log if debug is set to false
+	var debug = true;
+	if (!debug) {
+		var console = {};
+		console.log = function(){};
+	}
+
+	var shoot = 0, angle = 180, xMouse = 0, yMouse = 0; // initial variables
+	var ballSprite = new Image(); // ball sprite
+	ballSprite.src = 'data:image/png;base64,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';
+	var kick_audio = new Audio('data:audio/mpeg;base64,SUQzAwAAAAAAH1RFTkMAAAAVIAAAU291bmQgR3JpbmRlciAzLjUuNQD/+5RgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABYaW5nAAAADwAAAAoAAA/wABAQEBAQEBAQED8/Pz8/Pz8/Pz90dHR0dHR0dHR0lZWVlZWVlZWVlaysrKysrKysrKzOzs7Ozs7Ozs7O4uLi4uLi4uLi4vLy8vLy8vLy8vL5+fn5+fn5+fn5/////////////wAAAENMQU1FMy45OHIDtAAAAAAAAAAA9CAkB+eNAAHWAAAP8N0/+2UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/+2RgAAAQ1w7CaMMaOBEAGBkEIwEI7LUbR5htyK6NJLRkmAQElIpyCQAAADgi4PrLpOJXifFFgFnFEP09g1AACpkAACAgPGWBEgFjNvAn0gIAS3I4gAfZ/rsNWVA/Jm9zgF8RkjI/KIAg884Igw1N0NhVtEOQiDCB+npmIJ+9YghUPd3ZmGF/TCCELr7zQOL4TsIHsMnwwUiAW85qygBAKDLMQeT0zyacXvjGQ8FnD/e/vsbEOYQQyDJTLqT3m5PLv9ACQAYlW0kCeUlyMwgwSZjmspcqVMYVY+7dkf0r3bdc3DwVh5u3PcmjrgVTMYz/+8RgFoAFSVBI1WHgCnNlaQqnvAFb5gU5uYeACmmvJvcwkABjwVY4WRsmlgohqQxijtqvVaHxsMaPTBwORP4a6QhagpJQHI9pZDFM0Mb9jL+fcdcmmX8vB4KRQZ1FcmqPP5HBkgt0mmetokNzh7gZjas8rbOKVePGCBSJH1LHjq+d+/pSLAeUpW+qUgUw81R/q/fv7hiCfp+EByAATv/+AGEOo4kSA0IfcNWcNCvjJ8/DwRDgXcH+gR6C8N7m4C+LwhEVUG44MkRnhZYGxtc30BCUezFgZIasid45K29rKtEKCjW5sEOmZd0gRIG5vD8OO/ze80CkCIgnja/wwQyuPwEc47sDdcw9O/xCRhXe/M7/vnAAAABAibgjci1nn91/StjQk+UFr06OyuUSXj3vBeTHfJWmMLtUpM6KJM/kUmHx0PIjIoFZDYW9WKWA436ongtj3WJnykd9VubY8huO6PpV6DRnXDIcEOSIrVTXD6JZuZYLjRzwn0e9hos8EehKqY1dqzU/ieJ5MfYc6aJ+jDzVRbEsr2t7EjOUfN9VhazGcKbgWMhNHgnDrOCOoyIJHjPr8UzjX8r5jW2NEQGt8+cIThESx9saID2HAWAyCcIwOhhOP/////////////////////////////////Ut0Z2AAZAIQCAtcjt1j933lymFkoy24s2B6BxIdd9/6J9Jx+4hHYdDLeqCVVSVMI818hJwJJUxkiUHC8GNWRQRJTlSaNGstFu5HVdYnyiCBmiBis9/PCNbHxnHxh3VcpQqefJw/6bhvUbeNo0Mak+bEYai25Qq39ADEgUQICRQUCT///5//d/fnju5sKbTTkToEFICQSOb/////oE7qAAAAA4LhKfQoHDsppvA4LQmGmT/+9RgCYAInXPW7m9AAJMLGu3HtAAW9XdIfbwACaYnaI+wcAFBYDjP39EwvwYWAoVMeTYEghK+LoRPcjbE0JCKBZoRh4VMr0ZmYEScRIcZyVTtNufL1mgKGKBFZgyBsygvCv0HLC0BdxNRA8yTsw5IvEGCmn48y3+5eWgVxOLELOmGFwKAB5hAK0sstc3k5jvg4A9sPuJYMAdFjAMHmMDo0KCuth3HHWW5YgDU3i7iTMPooIcG8TCX0hiiqla9uGXcv//dyWRi93crl7+ORAJeVnTLVkLCrplT/N3yr67c1+OuwJUYAyRTd35+kxn2uSzzAAxkEAhzR2tLOUcZaoaxxrLXVS5f38ea13L//DDn6/DDn////////////////9x13HLOyAAA0GwoXA4JGmJBIHAzsALhiGHFiHWplt64HGztLE9uSBoPYnmy5fHuCsA7R/qceYXgoCwDZAdOkmHMJQ0L4KyakEl0/l83GARNygalwS0LycMaqlomZutN8TETYdqJxl/6b003LilGxkiieMf9CaNTTfLpdWanFmBss1/+gg33Qaipy6k5xExY6amv/nP/6yLRKQiHJeaELny8RtcYeG0Fqg4WMSNzODs0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'); // football kick audio
+
+	// TO DO: Fix bugs (and wrong calculations), and calculate the mass of the ball and diameter of it with its radius
+	/* initial game variables */
+	var canvas = document.getElementById('game'),
+		ctx = canvas.getContext("2d"),
+		m = 2, // mass of ball
+		x = 0, 
+		y = 0,
+		theta = 180 * Math.PI / 180, // shooting angle
+		g = 9.8, // gravity (m/s)
+		rho = 1.4, // air density
+		S = .5, // drag coefficient
+		D = 0.22, // diameter of the ball
+		A = Math.PI * Math.pow((0.5 * D), 2), // area of ball
+		cd = .5 * rho * S * A, // air resistance coefficient
+		F = m * g, // calculate force with Newton's formula
+		a = F / m, // calculate acceleration
+		r = 20, // ball radius
+		t = 0, // time
+		speed = 15, // speed
+		power = speed * 2, // power
+		FPS = 60, // FPS
+		deltaTime = 1 / FPS;
+
+	canvas.width = window.innerWidth, canvas.height = window.innerHeight;
+	// start positions
+	var startX = canvas.width / 2;
+	var startY = canvas.height / 2;
+
+	function doShoot() {
+		if (angle > 90 && angle < 270) { // if arrow is pointed right
+			theta = Math.abs(180 - angle) * Math.PI / 180;
+		} else { // if pointed left
+			theta = Math.abs(360 - Math.abs(angle)) * Math.PI / 180;
+		}
+		var Vx = power * Math.cos(theta); // initial velocity of x component (upwards)
+		var Vy = power * Math.sin(theta); // initial velocity of y
+
+		var Ax = 0; // acceleration x component
+		var Ay = -a; // acceleration y component
+
+		Vx += Ax * t; // append acceleration of x component to velocity of x component
+		Vy += Ay * t; // append acceleration of y component to velocity of y component
+
+		var u = Math.sqrt(Math.pow(Vx, 2) + Math.pow(Vy, 2)); // velocity
+		var w = D * u / Math.pow(D, 2); // calculate angular velocity
+		var Fm = cd * (w * u); // calculate magnus force
+		 
+		var Tx = -Vx / -a; // duration of x
+		var Ty = -Vy / -a; // duration of y from top to bottom
+
+		var Dx = Vx * t; // displacement x
+		var Dy = Math.pow(Vy, 2) / (a * 2) + 0.5 * a * Math.pow(t, 2); // displacement y
+		var Dz = t * (power * Math.cos(theta) - a * t / m); // displacement z
+		var yE = Math.tan(theta) * Dx - (a / (2 * Math.pow(u, 2) * Math.cos(theta, 2))) * Math.pow(Dy, 2); // parabola equation
+
+		/* spaghetti code that handles the movement (from different angles) */
+		if (angle > 90 && angle < 270) x = Dx + Fm / m; // x is x displacement
+		else x = -Dx - Fm / m;
+		if ((angle > 90 && angle < 270) === false) { // if arrow is pointed left
+			if (angle < 0) {
+				y = -yE - Fm / m;
+			} else if (angle > 0) {
+				y = yE + Fm / m;
+			}
+		} else { // if arrow is pointed right
+			if (180 - angle > 0 && Math.abs(angle) !== 180 && Math.abs(angle) !== 270) y = -yE - Fm / m; // y is -y parabola equation
+			else if (180 - angle < 0) y = yE + Fm / m;
+			else if (Math.abs(angle) == 270) y = Dy;
+			else if (Math.abs(angle) == 180 || Math.abs(angle) == 360) y = 0;
+		}
+
+		// draw if it is in bounds
+		if (inBounds()) {	
+			shoot = 1;
+			// console.log(`[-] x: ${x}, y: ${y}, z: ${Dz}`);
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.beginPath(); 
+			/* shadow for height effect */
+			ctx.shadowColor = '#000000';
+			ctx.shadowBlur = 20;
+			ctx.shadowOffsetX = 0;
+			ctx.shadowOffsetY = Dz;
+			ctx.drawImage(ballSprite, startX + x, startY + y, 2 * r, 2 * r);
+		} else {
+			shoot = 0;
+		}
+
+		t += deltaTime * speed; // increment time with deltaTime and speed
+
+		function inBounds() {
+			if (Dz <= 0) { // if height is <= 0 it means it hit the ground so stop the animation
+				return false;
+			}
+
+			if (startX + x + 2 * r >= canvas.width || (x < 0 && canvas.width - startX + Math.abs(x) + 2 * r >= canvas.width)) { // check if ball goes out of screen
+				return false;
+			}
+
+	    	return true;
+		}
+	};
+
+    var shooting_pointer = document.querySelector(".shooting-pointer");
+    var wheel = 0;
+	document.body.addEventListener("wheel", e => {
+	    const delta = Math.sign(e.deltaY);
+	    if (shoot) return false;
+	    console.log(`[-] angle: ${angle}, delta: ${delta}`);
+	    if (delta > 0) {
+	    	angle += 10;
+	    	if (angle == 360) {
+	    		angle = -angle;
+	    	} else if (angle == -260) {
+	    		angle = 90;
+	    	}
+	    }
+	    else if (delta < 0) {
+	    	if (angle == 90) {
+	    		angle = -270;
+	    	} else if (angle == -350 || angle == -360) {
+	    		angle = Math.abs(angle);
+	    	}
+	    	angle -= 10;	
+	    }
+	    shooting_pointer.style.transform = `rotate(${angle}deg)`; 
+	    wheel = 1;
+	});
+	document.body.addEventListener("mousemove", e => {
+		xMouse = e.pageX;
+		yMouse = e.pageY;
+	    shooting_pointer.style.left = xMouse;
+	    shooting_pointer.style.top = yMouse;
+	});
+
+	// mouse events (long-pressing, etc), stolen from stackoverflow
+    var mouseDown = 0;
+	document.body.onmousedown = function() { 
+	    mouseDown = 1;
+	    speed = 0; // reset speed
+	}
+	document.body.onmouseup = function() {
+	    shoot = 1, mouseDown = 0, wheel = 0;
+	    t = 0; // reset timer
+	    startX = xMouse;
+	    startY = yMouse;
+	    power = speed * 4; // power
+       	theta = (180 - angle) * Math.PI / 180;
+       	kick_audio.play();
+        console.log(`power: ${ power }, angle: ${ 180 - angle }`);
+	}
+
+	// hotfix for mouseup event not firing bug, stolen from stackoverflow
+	document.querySelector('html').addEventListener('mouseup', function (e) {
+	    var evt = document.createEvent("MouseEvents");
+	    evt.initEvent("mouseup", true, true);
+	});
+
+	/* Game loop */
+   	(function gameloop() {
+        window.requestAnimationFrame(gameloop);
+        if (wheel == 0 && mouseDown == 0) {
+        	doShoot();
+        }
+       	else if (mouseDown == 1 && speed < 30) {
+       		speed++;
+       		shooting_pointer.innerText = speed;
+       	}
+    })();
+</script>
+
+</body>
+</html>
